@@ -407,9 +407,8 @@ class _HomePageState extends State<HomePage> {
   Future<void> _openSettings() async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-          content: Text('Opening app settings...',
-              style: TextStyle(color: Colors.white)),
-          backgroundColor: Theme.of(context).primaryColor),
+          content: Text('Opening app settings...'),
+          backgroundColor: Theme.of(context).colorScheme.primary),
     );
     sleep(const Duration(seconds: 2));
     openAppSettings();
