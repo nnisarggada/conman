@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
+import 'package:package_info_plus/package_info_plus.dart';
 import 'package:permission_handler/permission_handler.dart';
 
 class SettingsPage extends StatefulWidget {
@@ -17,34 +18,92 @@ class SettingsPage extends StatefulWidget {
 }
 
 class _SettingsPageState extends State<SettingsPage> {
+  String _appVersion = 'Unknown';
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Settings'),
       ),
-      body: Center(
-        child: const Text('Settings Page'),
+      body: Column(
+        children: [
+          Expanded(
+            child: ListView(
+              children: [
+                ListTile(
+                  leading: const Icon(Icons.file_download),
+                  title: const Text('Import Contacts'),
+                  subtitle: const Text('Import contacts from a .vcf file'),
+                  onTap: _importContacts,
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.file_upload),
+                  title: const Text('Export Contacts'),
+                  subtitle: const Text('Export your contacts to a .vcf file'),
+                  onTap: _exportContacts,
+                ),
+                const Divider(),
+                ListTile(
+                  leading: const Icon(Icons.sync),
+                  title: const Text('Sync with PACMAN'),
+                  subtitle: const Text('Sync your data with PACMAN'),
+                  onTap: _syncWithPacman,
+                ),
+                const Divider(),
+              ],
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 16),
+            child: Text(
+              _appVersion,
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onTertiaryContainer
+                      .withValues(
+                        alpha: 0.5,
+                      ),
+                  fontSize: 14),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Future<void> _exportContacts(BuildContext context) async {
+  @override
+  void initState() {
+    super.initState();
+    _loadAppVersion();
+  }
+
+  Future<void> _exportContacts() async {
     await _requestStoragePermission();
 
     try {
-      // Fetch contacts from device
-      List<Contact> contacts = await FlutterContacts.getContacts();
+      Uint8List stringToUint8List(String data) {
+        // Convert string to bytes (List<int>)
+        List<int> encoded = utf8.encode(data);
 
-      // Convert contacts to VCard format
-      String vcfData = contacts.map((contact) => contact.toVCard()).join('\n');
+        // Convert List<int> to Uint8List
+        Uint8List uint8List = Uint8List.fromList(encoded);
 
-      // Save the VCF data to a file
+        return uint8List;
+      }
+
+      List<Contact>? contacts = await FlutterContacts.getContacts();
+
+      final vcfData = contacts.map((contact) => contact.toVCard()).join('\n');
+
       String? outputPath = await FilePicker.platform.saveFile(
         dialogTitle: 'Save Contacts File',
         fileName: 'contacts.vcf',
         type: FileType.custom,
         allowedExtensions: ['vcf'],
+        bytes: stringToUint8List(vcfData),
       );
 
       if (outputPath == null) {
@@ -57,10 +116,6 @@ class _SettingsPageState extends State<SettingsPage> {
         );
         return;
       }
-
-      // Write the vcf data to the file
-      final file = File(outputPath);
-      await file.writeAsString(vcfData);
 
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
@@ -79,9 +134,7 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _importContacts(BuildContext context) async {
-    await _requestStoragePermission();
-
+  Future<void> _importContacts() async {
     try {
       FilePickerResult? result = await FilePicker.platform.pickFiles(
         type: FileType.custom,
@@ -121,6 +174,7 @@ class _SettingsPageState extends State<SettingsPage> {
             backgroundColor: Theme.of(context).colorScheme.primary,
           ),
         );
+        Navigator.pop(context);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -141,28 +195,42 @@ class _SettingsPageState extends State<SettingsPage> {
     }
   }
 
-  Future<void> _requestStoragePermission() async {
-    PermissionStatus status = await Permission.storage.request();
+  Future<void> _loadAppVersion() async {
+    final packageInfo = await PackageInfo.fromPlatform();
+    setState(() {
+      _appVersion =
+          'Version ${packageInfo.version} (${packageInfo.buildNumber})';
+    });
+  }
 
+  Future<void> _requestStoragePermission() async {
+    PermissionStatus status = await Permission.manageExternalStorage.request();
     if (status.isGranted) {
       return;
     } else if (status.isDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Allow Storage permission in app settings',
-              style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red,
-        ),
+            content: Text('Storage permission denied :/',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red),
       );
     } else if (status.isPermanentlyDenied) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Allow Storage permission in app settings',
-              style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red,
-        ),
+            content: Text('Allow Storage permission in app settings',
+                style: TextStyle(color: Colors.white)),
+            backgroundColor: Colors.red),
       );
       openAppSettings();
     }
+  }
+
+  Future<void> _syncWithPacman() async {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Coming soon...'),
+        backgroundColor: Theme.of(context).colorScheme.primary,
+      ),
+    );
   }
 }

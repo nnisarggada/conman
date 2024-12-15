@@ -31,7 +31,7 @@ class Contacts extends StatelessWidget {
         useMaterial3: true,
         colorScheme: MaterialTheme.darkScheme(),
       ),
-      home: const HomePage(title: 'Contacts'),
+      home: HomePage(title: 'Contacts'),
     );
   }
 }
@@ -80,57 +80,46 @@ class _HomePageState extends State<HomePage> {
       );
     }
 
-    return SafeArea(
-      child: Scaffold(
-        floatingActionButton: Padding(
-          padding: const EdgeInsets.all(10),
-          child: SizedBox(
-            width: 64,
-            height: 64,
-            child: FittedBox(
-              child: FloatingActionButton(
-                onPressed: () {
-                  Navigator.of(context).push(
-                    MaterialPageRoute(builder: (_) => const AddContactPage()),
-                  );
-                },
-                tooltip: 'Add New Contact',
-                elevation: 10,
-                shape: const CircleBorder(),
-                child: const Icon(Icons.add, size: 36),
-              ),
-            ),
-          ),
+    return Scaffold(
+      floatingActionButton: Padding(
+        padding: const EdgeInsets.all(10),
+        child: FloatingActionButton(
+          onPressed: () {
+            Navigator.of(context).push(
+              MaterialPageRoute(builder: (_) => const AddContactPage()),
+            );
+          },
+          tooltip: 'Add New Contact',
+          elevation: 10,
+          shape: const CircleBorder(),
+          child: const Icon(Icons.add, size: 36),
         ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-                children: [
-                  Text(
-                    '${_contacts?.length ?? 0} contacts',
-                    style: TextStyle(
-                      color: Theme.of(context).colorScheme.primary,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w200,
-                    ),
+      ),
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(10),
+          child: Column(
+            children: [
+              Container(
+                alignment: Alignment.centerRight,
+                child: Text(
+                  '${_contacts?.length ?? 0} contacts',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.primary,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w200,
                   ),
-                  const SizedBox(height: 6),
-                  _buildSearchBar(),
-                ],
+                ),
               ),
-            ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 12),
+              SizedBox(height: 8),
+              _buildSearchBar(),
+              Expanded(
                 child: CupertinoScrollbar(
                   thumbVisibility: true,
-                  thicknessWhileDragging: 12,
+                  thicknessWhileDragging: 16,
                   thickness: 8,
                   radius: const Radius.circular(8),
+                  radiusWhileDragging: const Radius.circular(12),
                   child: ListView.builder(
                     physics: const BouncingScrollPhysics(),
                     itemCount: _filteredContacts?.length ?? 0,
@@ -141,8 +130,8 @@ class _HomePageState extends State<HomePage> {
                   ),
                 ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );
@@ -185,7 +174,8 @@ class _HomePageState extends State<HomePage> {
             : contact.thumbnail != null
                 ? MemoryImage(contact.thumbnail!)
                 : null,
-        backgroundColor: Theme.of(context).colorScheme.primary,
+        backgroundColor: Theme.of(context).colorScheme.secondaryContainer,
+        foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
         child: contact.photo == null && contact.thumbnail == null
             ? Text(
                 contact.name.first.isEmpty
@@ -196,7 +186,6 @@ class _HomePageState extends State<HomePage> {
                 style: const TextStyle(
                   fontSize: 14,
                   fontWeight: FontWeight.w700,
-                  color: Colors.black,
                 ),
               )
             : null,
@@ -206,25 +195,26 @@ class _HomePageState extends State<HomePage> {
 
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(bottom: 10),
       child: TextField(
         controller: searchController,
         decoration: InputDecoration(
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(6),
-            ),
-            hintText: 'Search Contacts',
-            prefixIcon: const Icon(Icons.search, size: 18),
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
-            suffixIcon: IconButton(
-              icon: const Icon(Icons.settings, size: 18),
-              onPressed: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (_) => const SettingsPage()),
-                );
-              },
-            )),
+          border: OutlineInputBorder(
+            borderRadius: BorderRadius.circular(6),
+          ),
+          hintText: 'Search Contacts',
+          prefixIcon: const Icon(Icons.search, size: 18),
+          contentPadding:
+              const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          suffixIcon: IconButton(
+            icon: const Icon(Icons.settings, size: 18),
+            onPressed: () {
+              Navigator.of(context).push(
+                MaterialPageRoute(builder: (_) => SettingsPage()),
+              );
+            },
+          ),
+        ),
       ),
     );
   }
