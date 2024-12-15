@@ -1,11 +1,12 @@
-import 'dart:convert';
+// ignore_for_file: use_build_context_synchronously
+
 import 'dart:io';
-import 'dart:math';
-import 'dart:typed_data';
 
 import 'package:conman/contact.dart';
+import 'package:conman/settings.dart';
 import 'package:conman/theme.dart';
-import 'package:file_picker/file_picker.dart';
+import 'package:conman/addcontact.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -57,20 +58,15 @@ class _HomePageState extends State<HomePage> {
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: <Widget>[
-              Text(
+              const Text(
                 'Permission denied :/',
-                style: TextStyle(color: Colors.red, fontSize: 18),
+                style: TextStyle(color: Colors.red, fontSize: 14),
                 textAlign: TextAlign.center,
               ),
-              Text(
-                'Please allow contacts access in your device settings.',
-                style: TextStyle(color: Colors.grey, fontSize: 16),
-                textAlign: TextAlign.center,
-              ),
-              SizedBox(height: 20),
+              const SizedBox(height: 12),
               ElevatedButton(
                 onPressed: _openSettings,
-                child: Text('Open Settings'),
+                child: const Text('Open Settings'),
               ),
             ],
           ),
@@ -79,18 +75,38 @@ class _HomePageState extends State<HomePage> {
     }
 
     if (_contacts == null) {
-      return Scaffold(
+      return const Scaffold(
         body: Center(child: CircularProgressIndicator()),
       );
     }
 
     return SafeArea(
       child: Scaffold(
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.all(10),
+          child: SizedBox(
+            width: 64,
+            height: 64,
+            child: FittedBox(
+              child: FloatingActionButton(
+                onPressed: () {
+                  Navigator.of(context).push(
+                    MaterialPageRoute(builder: (_) => const AddContactPage()),
+                  );
+                },
+                tooltip: 'Add New Contact',
+                elevation: 10,
+                shape: const CircleBorder(),
+                child: const Icon(Icons.add, size: 36),
+              ),
+            ),
+          ),
+        ),
         body: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Padding(
-              padding: const EdgeInsets.all(16),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 6),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.end,
                 children: [
@@ -102,19 +118,28 @@ class _HomePageState extends State<HomePage> {
                       fontWeight: FontWeight.w200,
                     ),
                   ),
-                  SizedBox(height: 10),
+                  const SizedBox(height: 6),
                   _buildSearchBar(),
                 ],
               ),
             ),
             Expanded(
-              child: ListView.builder(
-                physics: BouncingScrollPhysics(),
-                itemCount: _filteredContacts?.length ?? 0,
-                itemBuilder: (context, index) {
-                  final contact = _filteredContacts![index];
-                  return _buildContactTile(contact);
-                },
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12),
+                child: CupertinoScrollbar(
+                  thumbVisibility: true,
+                  thicknessWhileDragging: 12,
+                  thickness: 8,
+                  radius: const Radius.circular(8),
+                  child: ListView.builder(
+                    physics: const BouncingScrollPhysics(),
+                    itemCount: _filteredContacts?.length ?? 0,
+                    itemBuilder: (context, index) {
+                      final contact = _filteredContacts![index];
+                      return _buildContactTile(contact);
+                    },
+                  ),
+                ),
               ),
             ),
           ],
@@ -139,157 +164,69 @@ class _HomePageState extends State<HomePage> {
   }
 
   Widget _buildContactTile(Contact contact) {
-    Color bgColor = _getRandomColor();
-
-    return Card(
-      margin: EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-      elevation: 2,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-      child: ListTile(
-        contentPadding: EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-        title: Text(
-          contact.displayName,
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        onTap: () async {
-          final fullContact = await FlutterContacts.getContact(contact.id);
-          if (fullContact != null) {
-            await Navigator.of(context).push(
-              MaterialPageRoute(builder: (_) => ContactPage(fullContact)),
-            );
-          }
-        },
-        leading: CircleAvatar(
-          radius: 30,
-          backgroundImage: contact.photo != null
-              ? MemoryImage(contact.photo!)
-              : contact.thumbnail != null
-                  ? MemoryImage(contact.thumbnail!)
-                  : null,
-          backgroundColor: bgColor,
-          child: contact.photo == null && contact.thumbnail == null
-              ? Text(
-                  contact.name.first.isEmpty
-                      ? '?'
-                      : contact.name.last.isEmpty
-                          ? contact.name.first[0]
-                          : contact.name.first[0] + contact.name.last[0],
-                  style: TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.w600,
-                      color:
-                          _isColorLight(bgColor) ? Colors.black : Colors.white),
-                )
-              : null,
-        ),
-        trailing: Icon(Icons.chevron_right),
+    return ListTile(
+      contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      title: Text(
+        contact.displayName,
+        style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+      ),
+      onTap: () async {
+        final fullContact = await FlutterContacts.getContact(contact.id);
+        if (fullContact != null) {
+          await Navigator.of(context).push(
+            MaterialPageRoute(builder: (_) => ContactPage(fullContact)),
+          );
+        }
+      },
+      leading: CircleAvatar(
+        radius: 22,
+        backgroundImage: contact.photo != null
+            ? MemoryImage(contact.photo!)
+            : contact.thumbnail != null
+                ? MemoryImage(contact.thumbnail!)
+                : null,
+        backgroundColor: Theme.of(context).colorScheme.primary,
+        child: contact.photo == null && contact.thumbnail == null
+            ? Text(
+                contact.name.first.isEmpty
+                    ? '?'
+                    : contact.name.last.isEmpty
+                        ? contact.name.first[0]
+                        : contact.name.first[0] + contact.name.last[0],
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w700,
+                  color: Colors.black,
+                ),
+              )
+            : null,
       ),
     );
   }
 
   Widget _buildSearchBar() {
-    return TextField(
-      controller: searchController,
-      decoration: InputDecoration(
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(12),
-        ),
-        hintText: 'Search Contacts',
-        prefixIcon: Icon(Icons.search),
-        contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-        suffixIcon: PopupMenuButton<String>(
-          icon: Icon(Icons.more_vert),
-          onSelected: (value) async {
-            switch (value) {
-              case 'import':
-                _importContacts();
-                break;
-              case 'export':
-                await _exportContacts();
-                break;
-              case 'settings':
-                _openSettings();
-                break;
-            }
-          },
-          itemBuilder: (context) => [
-            PopupMenuItem<String>(
-              value: 'import',
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Import Contacts'),
-              ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: TextField(
+        controller: searchController,
+        decoration: InputDecoration(
+            border: OutlineInputBorder(
+              borderRadius: BorderRadius.circular(6),
             ),
-            PopupMenuItem<String>(
-              value: 'export',
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Export Contacts'),
-              ),
-            ),
-            PopupMenuItem<String>(
-              value: 'settings',
-              child: Padding(
-                padding: EdgeInsets.symmetric(vertical: 8),
-                child: Text('Settings'),
-              ),
-            ),
-          ],
-        ),
+            hintText: 'Search Contacts',
+            prefixIcon: const Icon(Icons.search, size: 18),
+            contentPadding:
+                const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            suffixIcon: IconButton(
+              icon: const Icon(Icons.settings, size: 18),
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const SettingsPage()),
+                );
+              },
+            )),
       ),
     );
-  }
-
-  Future<void> _exportContacts() async {
-    await _requestStoragePermission();
-
-    try {
-      Uint8List stringToUint8List(String data) {
-        // Convert string to bytes (List<int>)
-        List<int> encoded = utf8.encode(data);
-
-        // Convert List<int> to Uint8List
-        Uint8List uint8List = Uint8List.fromList(encoded);
-
-        return uint8List;
-      }
-
-      final vcfData = _contacts!.map((contact) => contact.toVCard()).join('\n');
-
-      String? outputPath = await FilePicker.platform.saveFile(
-        dialogTitle: 'Save Contacts File',
-        fileName: 'contacts.vcf',
-        type: FileType.custom,
-        allowedExtensions: ['vcf'],
-        bytes: stringToUint8List(vcfData),
-      );
-
-      if (outputPath == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('Export canceled', style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Contacts exported to $outputPath'),
-          backgroundColor: Theme.of(context).colorScheme.primary,
-        ),
-      );
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to export contacts: $e',
-              style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
   }
 
   Future<void> _fetchContacts() async {
@@ -332,78 +269,6 @@ class _HomePageState extends State<HomePage> {
     });
   }
 
-  Color _getRandomColor() {
-    final random = Random();
-    return Colors.primaries[random.nextInt(Colors.primaries.length)];
-  }
-
-  Future<void> _importContacts() async {
-    try {
-      FilePickerResult? result = await FilePicker.platform.pickFiles(
-        type: FileType.custom,
-        allowedExtensions: ['vcf'],
-      );
-
-      if (result != null && result.files.single.path != null) {
-        final filePath = result.files.single.path!;
-        final file = File(filePath);
-
-        if (!await file.exists()) {
-          throw Exception('Selected file does not exist');
-        }
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Importing contacts...'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-
-        final vcfData = await file.readAsString();
-
-        final vCards = vcfData
-            .split('END:VCARD')
-            .where((vcard) => vcard.trim().isNotEmpty)
-            .toList();
-
-        for (var vCard in vCards) {
-          final contact = Contact.fromVCard(vCard);
-          await FlutterContacts.insertContact(contact);
-        }
-
-        await _fetchContacts();
-
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('${vCards.length} contacts imported successfully!'),
-            backgroundColor: Theme.of(context).colorScheme.primary,
-          ),
-        );
-      } else {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content:
-                Text('No file selected', style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text('Failed to import contacts: $e',
-              style: TextStyle(color: Colors.white)),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
-  bool _isColorLight(Color color) {
-    final brightness = 0.2126 * color.r + 0.7152 * color.g + 0.0722 * color.b;
-    return brightness > 0.775;
-  }
-
   Future<void> _openSettings() async {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
@@ -412,27 +277,5 @@ class _HomePageState extends State<HomePage> {
     );
     sleep(const Duration(seconds: 2));
     openAppSettings();
-  }
-
-  Future<void> _requestStoragePermission() async {
-    PermissionStatus status = await Permission.manageExternalStorage.request();
-    if (status.isGranted) {
-      return;
-    } else if (status.isDenied) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Storage permission denied :/',
-                style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red),
-      );
-    } else if (status.isPermanentlyDenied) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-            content: Text('Allow Storage permission in app settings',
-                style: TextStyle(color: Colors.white)),
-            backgroundColor: Colors.red),
-      );
-      openAppSettings();
-    }
   }
 }
